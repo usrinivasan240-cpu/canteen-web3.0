@@ -24,10 +24,10 @@ export default function AnalyticsPage() {
 
       for (const c of canteens || []) {
         try {
-          const data = await api.canteenData.get(c._id);
+          const data = await api.canteenData.get(c.id);
           const orders = (data?.orders || []) as Order[];
           const reviews = (data?.reviews || []) as Review[];
-          const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+          const totalRevenue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
           const avgRating = reviews.length
             ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
             : 0;
@@ -138,7 +138,7 @@ export default function AnalyticsPage() {
                     </tr>
                   ) : (
                     analytics.map((a) => (
-                      <tr key={a.canteen._id} className="border-b border-border/50 last:border-0 hover:bg-violet-50/30 transition-colors">
+                      <tr key={a.canteen.id} className="border-b border-border/50 last:border-0 hover:bg-violet-50/30 transition-colors">
                         <td className="px-5 py-3.5 font-medium text-text-primary">{a.canteen.name}</td>
                         <td className="px-5 py-3.5 text-text-secondary">{a.canteen.collegeName || '-'}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">{a.orders.length}</td>

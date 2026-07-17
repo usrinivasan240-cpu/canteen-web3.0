@@ -50,8 +50,8 @@ export default function UsersPage() {
     fetchData();
   }, [fetchData]);
 
-  const getCollegeName = (id: string) => colleges.find((c) => c._id === id)?.name || '-';
-  const getCanteenName = (id: string) => canteens.find((c) => c._id === id)?.name || '-';
+  const getCollegeName = (id: string) => colleges.find((c) => c.id === id)?.name || '-';
+  const getCanteenName = (id: string) => canteens.find((c) => c.id === id)?.name || '-';
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
@@ -270,7 +270,7 @@ export default function UsersPage() {
             >
               <option value="">Select college (optional)</option>
               {colleges.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -283,7 +283,7 @@ export default function UsersPage() {
             >
               <option value="">Select canteen (optional)</option>
               {filteredCanteens.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>

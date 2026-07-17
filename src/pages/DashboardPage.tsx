@@ -14,21 +14,24 @@ export default function DashboardPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [colRes, cantRes, userRes] = await Promise.all([
-        api.colleges.list() as Promise<College[]>,
-        api.canteens.list() as Promise<Canteen[]>,
-        api.users.list() as Promise<User[]>,
+      const [colRes, cantRes, userRes] = await Promise.allSettled([
+        api.colleges.list(),
+        api.canteens.list(),
+        api.users.list(),
       ]);
-      setColleges(colRes || []);
-      setCanteens(cantRes || []);
-      setUsers(userRes || []);
+      const collegeData = colRes.status === 'fulfilled' ? (colRes.value as College[]) : [];
+      const canteenData = cantRes.status === 'fulfilled' ? (cantRes.value as Canteen[]) : [];
+      const userData = userRes.status === 'fulfilled' ? (userRes.value as User[]) : [];
 
-      // Fetch orders from each canteen
+      setColleges(Array.isArray(collegeData) ? collegeData : []);
+      setCanteens(Array.isArray(canteenData) ? canteenData : []);
+      setUsers(Array.isArray(userData) ? userData : []);
+
       const allOrders: Order[] = [];
-      for (const c of cantRes || []) {
+      for (const c of Array.isArray(canteenData) ? canteenData : []) {
         try {
-          const data = await api.canteenData.get(c._id);
-          if (data?.orders) {
+          const data = await api.canteenData.get(c.id);
+          if (data?.orders && Array.isArray(data.orders)) {
             allOrders.push(...(data.orders as Order[]));
           }
         } catch {
@@ -47,8 +50,8 @@ export default function DashboardPage() {
     fetchData();
   }, [fetchData]);
 
-  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
-  const recentOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0);
+  const recentOrders = [...orders].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -84,18 +87,18 @@ export default function DashboardPage() {
               ) : (
                 <div className="space-y-3">
                   {recentOrders.map((order) => (
-                    <div key={order._id} className="flex items-center justify-between p-3 rounded-xl bg-lavender-50/60 hover:bg-violet-50/40 transition-colors">
+                    <div key={order.id} className="flex items-center justify-between p-3 rounded-xl bg-lavender-50/60 hover:bg-violet-50/40 transition-colors">
                       <div>
                         <p className="text-sm font-medium text-text-primary">{order.userName || 'Unknown'}</p>
                         <p className="text-xs text-text-muted">
-                          {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          {order.timestamp ? new Date(order.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-semibold text-text-primary">₹{order.totalAmount}</p>
+                        <p className="text-sm font-semibold text-text-primary">₹{order.totalPrice}</p>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          order.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                          order.status === 'delivered' || order.status === 'collected' ? 'bg-emerald-100 text-emerald-700' :
+                          order.status === 'cancelled' || order.status === 'expired' ? 'bg-red-100 text-red-700' :
                           'bg-violet-100 text-violet-700'
                         }`}>
                           {order.status}

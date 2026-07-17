@@ -41,7 +41,7 @@ export default function CanteensPage() {
   }, [fetchData]);
 
   const getCollegeName = (collegeId: string) => {
-    const college = colleges.find((c) => c._id === collegeId);
+    const college = colleges.find((c) => c.id === collegeId);
     return college?.name || 'Unknown';
   };
 
@@ -64,7 +64,7 @@ export default function CanteensPage() {
   const handleDelete = async (canteen: Canteen) => {
     if (!confirm(`Delete canteen "${canteen.name}"? This cannot be undone.`)) return;
     try {
-      await api.canteens.remove(canteen._id);
+      await api.canteens.remove(canteen.id);
       fetchData();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to delete');
@@ -93,7 +93,7 @@ export default function CanteensPage() {
     { key: 'ownerEmail', label: 'Owner Email' },
     { key: 'location', label: 'Location' },
     {
-      key: '_id',
+      key: 'id',
       label: '',
       className: 'w-16',
       render: (row) => (
@@ -162,7 +162,7 @@ export default function CanteensPage() {
             >
               <option value="">Select a college</option>
               {colleges.map((c) => (
-                <option key={c._id} value={c._id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>

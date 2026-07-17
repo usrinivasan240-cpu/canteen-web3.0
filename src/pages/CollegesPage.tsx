@@ -48,7 +48,7 @@ export default function CollegesPage() {
   const handleDelete = async (college: College) => {
     if (!confirm(`Delete college "${college.name}"? This cannot be undone.`)) return;
     try {
-      await api.colleges.remove(college._id);
+      await api.colleges.remove(college.id);
       fetchColleges();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : 'Failed to delete');
@@ -81,7 +81,7 @@ export default function CollegesPage() {
       ),
     },
     {
-      key: '_id',
+      key: 'id',
       label: '',
       className: 'w-16',
       render: (row) => (
