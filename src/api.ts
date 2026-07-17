@@ -61,6 +61,8 @@ export const api = {
     list: () => get<unknown[]>('/api/canteens'),
     create: (data: { name: string; collegeId: string; ownerName: string; ownerEmail: string; location: string }) =>
       post<unknown>('/api/canteens', data),
+    update: (id: string, data: { name?: string; collegeId?: string; ownerName?: string; location?: string; status?: string }) =>
+      put<unknown>(`/api/canteens/${id}`, data),
     remove: (id: string) => del<unknown>(`/api/canteens/${id}`),
     updateName: (canteenId: string, name: string) =>
       post<unknown>('/api/canteen/update-name', { canteenId, name }),
@@ -75,11 +77,11 @@ export const api = {
 
   users: {
     list: () => get<unknown[]>('/api/users'),
-    create: (data: { name: string; email: string; role: string; collegeId?: string; canteenId?: string; subCanteenId?: string; posting?: string }) =>
+    create: (data: { name: string; email: string; password: string; role: string; collegeId?: string; canteenId?: string; subCanteenId?: string; posting?: string }) =>
       post<unknown>('/api/users', data),
     remove: (email: string) => del<unknown>(`/api/users/${encodeURIComponent(email)}`),
-    updateRole: (email: string, role: string, posting?: string) =>
-      put<unknown>(`/api/users/${encodeURIComponent(email)}/role`, { role, posting }),
+    update: (email: string, data: { role: string; name?: string; collegeId?: string; canteenId?: string; subCanteenId?: string; posting?: string; status?: string }) =>
+      put<unknown>(`/api/users/${encodeURIComponent(email)}/role`, data),
   },
 
   canteenData: {

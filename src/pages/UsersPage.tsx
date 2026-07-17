@@ -25,7 +25,15 @@ export default function UsersPage() {
     subCanteenId: '',
     posting: '',
   });
-  const [editRole, setEditRole] = useState('');
+  const [editForm, setEditForm] = useState({
+    name: '',
+    role: 'customer' as string,
+    collegeId: '',
+    canteenId: '',
+    subCanteenId: '',
+    posting: '',
+    status: 'active' as string,
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,9 +45,15 @@ export default function UsersPage() {
         api.colleges.list(),
         api.canteens.list(),
       ]);
-      setUsers(userRes.status === 'fulfilled' ? (Array.isArray(userRes.value) ? userRes.value as User[] : []) : []);
-      setColleges(colRes.status === 'fulfilled' ? (Array.isArray(colRes.value) ? colRes.value as College[] : []) : []);
-      setCanteens(cantRes.status === 'fulfilled' ? (Array.isArray(cantRes.value) ? cantRes.value as Canteen[] : []) : []);
+      if (userRes.status === 'fulfilled' && Array.isArray(userRes.value)) {
+        setUsers(userRes.value as User[]);
+      }
+      if (colRes.status === 'fulfilled' && Array.isArray(colRes.value)) {
+        setColleges(colRes.value as College[]);
+      }
+      if (cantRes.status === 'fulfilled' && Array.isArray(cantRes.value)) {
+        setCanteens(cantRes.value as Canteen[]);
+      }
     } catch (err) {
       console.error('Fetch users error:', err);
     } finally {
@@ -53,24 +67,28 @@ export default function UsersPage() {
 
   const getCollegeName = (id: string) => colleges.find((c) => c.id === id)?.name || '-';
   const getCanteenName = (id: string) => canteens.find((c) => c.id === id)?.name || '-';
+  const filteredCanteens = form.collegeId
+    ? canteens.filter((c) => c.collegeId === form.collegeId)
+    : canteens;
+  const editFilteredCanteens = editForm.collegeId
+    ? canteens.filter((c) => c.collegeId === editForm.collegeId)
+    : canteens;
 
   const handleCreate = async (e: FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
     try {
-      const payload: Record<string, string> = {
+      await api.users.create({
         name: form.name,
         email: form.email,
         password: form.password || 'changeme',
         role: form.role,
-      };
-      if (form.collegeId) payload.collegeId = form.collegeId;
-      if (form.canteenId) payload.canteenId = form.canteenId;
-      if (form.subCanteenId) payload.subCanteenId = form.subCanteenId;
-      if (form.posting) payload.posting = form.posting;
-
-      await api.users.create(payload as Parameters<typeof api.users.create>[0]);
+        collegeId: form.collegeId || undefined,
+        canteenId: form.canteenId || undefined,
+        subCanteenId: form.subCanteenId || undefined,
+        posting: form.posting || undefined,
+      });
       setShowCreateModal(false);
       setForm({ name: '', email: '', password: '', role: 'customer', collegeId: '', canteenId: '', subCanteenId: '', posting: '' });
       fetchData();
@@ -83,23 +101,39 @@ export default function UsersPage() {
 
   const openEditModal = (user: User) => {
     setEditingUser(user);
-    setEditRole(user.role);
+    setEditForm({
+      name: user.name || '',
+      role: user.role,
+      collegeId: user.collegeId || '',
+      canteenId: user.canteenId || '',
+      subCanteenId: user.subCanteenId || '',
+      posting: user.posting || '',
+      status: user.status || 'active',
+    });
     setShowEditModal(true);
     setError('');
   };
 
-  const handleUpdateRole = async (e: FormEvent) => {
+  const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
     setSubmitting(true);
     setError('');
     try {
-      await api.users.updateRole(editingUser.email, editRole);
+      await api.users.update(editingUser.email, {
+        role: editForm.role,
+        name: editForm.name,
+        collegeId: editForm.collegeId || undefined,
+        canteenId: editForm.canteenId || undefined,
+        subCanteenId: editForm.subCanteenId || undefined,
+        posting: editForm.posting || undefined,
+        status: editForm.status,
+      });
       setShowEditModal(false);
       setEditingUser(null);
       fetchData();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to update role');
+      setError(err instanceof Error ? err.message : 'Failed to update user');
     } finally {
       setSubmitting(false);
     }
@@ -190,10 +224,6 @@ export default function UsersPage() {
       ),
     },
   ];
-
-  const filteredCanteens = form.collegeId
-    ? canteens.filter((c) => c.collegeId === form.collegeId)
-    : canteens;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -328,19 +358,29 @@ export default function UsersPage() {
         </form>
       </Modal>
 
-      {/* Edit Role Modal */}
-      <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingUser(null); }} title={`Edit Role — ${editingUser?.name || editingUser?.email || ''}`}>
+      {/* Edit User Modal — Full Edit */}
+      <Modal open={showEditModal} onClose={() => { setShowEditModal(false); setEditingUser(null); setError(''); }} title={`Edit — ${editingUser?.name || editingUser?.email || ''}`}>
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-danger animate-fade-in">
             {error}
           </div>
         )}
-        <form onSubmit={handleUpdateRole} className="space-y-4">
+        <form onSubmit={handleUpdate} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">New Role</label>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Name</label>
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              required
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1.5">Role</label>
             <select
-              value={editRole}
-              onChange={(e) => setEditRole(e.target.value)}
+              value={editForm.role}
+              onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
               className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 capitalize"
             >
               {ROLES.map((r) => (
@@ -348,10 +388,61 @@ export default function UsersPage() {
               ))}
             </select>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">College</label>
+              <select
+                value={editForm.collegeId}
+                onChange={(e) => setEditForm({ ...editForm, collegeId: e.target.value, canteenId: '' })}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+              >
+                <option value="">None</option>
+                {colleges.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Canteen</label>
+              <select
+                value={editForm.canteenId}
+                onChange={(e) => setEditForm({ ...editForm, canteenId: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+              >
+                <option value="">None</option>
+                {editFilteredCanteens.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Posting</label>
+              <input
+                type="text"
+                value={editForm.posting}
+                onChange={(e) => setEditForm({ ...editForm, posting: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+                placeholder="e.g. Morning shift"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">Status</label>
+              <select
+                value={editForm.status}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400"
+              >
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
+          </div>
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
-              onClick={() => { setShowEditModal(false); setEditingUser(null); }}
+              onClick={() => { setShowEditModal(false); setEditingUser(null); setError(''); }}
               className="px-4 py-2 rounded-xl text-sm font-medium text-text-secondary hover:bg-lavender-100 transition-colors"
             >
               Cancel
@@ -361,7 +452,7 @@ export default function UsersPage() {
               disabled={submitting}
               className="px-4 py-2 rounded-xl gradient-violet text-white text-sm font-semibold shadow-violet hover:shadow-violet-lg transition-all disabled:opacity-60"
             >
-              {submitting ? 'Updating...' : 'Update Role'}
+              {submitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>
