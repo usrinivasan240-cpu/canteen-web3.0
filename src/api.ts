@@ -18,7 +18,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
   const text = await res.text();
   if (!text) return [] as unknown as T;
-  return JSON.parse(text);
+  const json = JSON.parse(text);
+  if (json && typeof json === 'object' && 'success' in json) {
+    const values = Object.values(json).filter(v => Array.isArray(v));
+    if (values.length === 1) return values[0] as T;
+    if (json.data) return json.data as T;
+    return json as T;
+  }
+  return json as T;
 }
 
 function get<T>(path: string): Promise<T> {
