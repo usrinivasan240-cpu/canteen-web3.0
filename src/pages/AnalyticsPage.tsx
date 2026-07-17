@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
                     analytics.map((a) => (
                       <tr key={a.canteen.id} className="border-b border-border/50 last:border-0 hover:bg-violet-50/30 transition-colors">
                         <td className="px-5 py-3.5 font-medium text-text-primary">{a.canteen.name}</td>
-                        <td className="px-5 py-3.5 text-text-secondary">{a.canteen.collegeName || '-'}</td>
+                        <td className="px-5 py-3.5 text-text-secondary">{a.canteen.collegeId || '-'}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">{a.orders.length}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">₹{a.totalRevenue.toLocaleString()}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">{a.reviews.length}</td>
