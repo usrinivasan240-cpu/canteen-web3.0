@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
-import type { Canteen, Order, Review } from '../types';
+import type { Canteen, Order, Review, College } from '../types';
 import { TrendingUp, ShoppingCart, Star, DollarSign } from 'lucide-react';
 import StatCard from '../components/StatCard';
 
@@ -14,15 +14,23 @@ interface CanteenAnalytics {
 
 export default function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<CanteenAnalytics[]>([]);
+  const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getCollegeName = (id: string) => colleges.find((c) => c.id === id)?.name || '-';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const canteens = (await api.canteens.list()) as Canteen[];
+      const [canteensData, collegesData] = await Promise.allSettled([
+        api.canteens.list(),
+        api.colleges.list(),
+      ]);
+      const canteens = canteensData.status === 'fulfilled' ? (canteensData.value as Canteen[]) : [];
+      setColleges(collegesData.status === 'fulfilled' ? (collegesData.value as College[]) : []);
       const results: CanteenAnalytics[] = [];
 
-      for (const c of canteens || []) {
+      for (const c of Array.isArray(canteens) ? canteens : []) {
         try {
           const data = await api.canteenData.get(c.id);
           const orders = (data?.orders || []) as Order[];
@@ -85,7 +93,7 @@ export default function AnalyticsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 border-3 border-violet-300 border-t-violet-600 rounded-full" />
+          <div className="animate-spin w-8 h-8 border-[3px] border-violet-300 border-t-violet-600 rounded-full" />
         </div>
       ) : (
         <>
@@ -140,7 +148,7 @@ export default function AnalyticsPage() {
                     analytics.map((a) => (
                       <tr key={a.canteen.id} className="border-b border-border/50 last:border-0 hover:bg-violet-50/30 transition-colors">
                         <td className="px-5 py-3.5 font-medium text-text-primary">{a.canteen.name}</td>
-                        <td className="px-5 py-3.5 text-text-secondary">{a.canteen.collegeId || '-'}</td>
+                        <td className="px-5 py-3.5 text-text-secondary">{getCollegeName(a.canteen.collegeId)}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">{a.orders.length}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">₹{a.totalRevenue.toLocaleString()}</td>
                         <td className="px-5 py-3.5 text-right font-medium text-text-primary">{a.reviews.length}</td>

@@ -90,7 +90,6 @@ export default function CanteensPage() {
       render: (row) => getCollegeName(row.collegeId as string),
     },
     { key: 'ownerName', label: 'Owner' },
-    { key: 'ownerEmail', label: 'Owner Email' },
     { key: 'location', label: 'Location' },
     {
       key: 'id',
@@ -128,7 +127,7 @@ export default function CanteensPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin w-8 h-8 border-3 border-violet-300 border-t-violet-600 rounded-full" />
+          <div className="animate-spin w-8 h-8 border-[3px] border-violet-300 border-t-violet-600 rounded-full" />
         </div>
       ) : (
         <DataTable columns={columns} data={canteens as unknown as Record<string, unknown>[]} emptyMessage="No canteens found" />

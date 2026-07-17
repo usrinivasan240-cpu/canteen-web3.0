@@ -14,6 +14,7 @@ interface DataTableProps<T> {
   pageSize?: number;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
+  rowKey?: (row: T) => string | number;
 }
 
 export default function DataTable<T extends Record<string, unknown>>({
@@ -22,6 +23,7 @@ export default function DataTable<T extends Record<string, unknown>>({
   pageSize = 10,
   emptyMessage = 'No data found',
   onRowClick,
+  rowKey,
 }: DataTableProps<T>) {
   const [page, setPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
@@ -54,7 +56,7 @@ export default function DataTable<T extends Record<string, unknown>>({
             ) : (
               pageData.map((row, i) => (
                 <tr
-                  key={i}
+                  key={rowKey ? rowKey(row) : (row.id || i) as string | number}
                   onClick={() => onRowClick?.(row)}
                   className={`border-b border-border/50 last:border-0 hover:bg-violet-50/30 transition-colors ${
                     onRowClick ? 'cursor-pointer' : ''

@@ -1,20 +1,23 @@
 import { API_BASE } from './config';
+import type { CanteenData } from './types';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const token = localStorage.getItem('superadmin_token');
   const res = await fetch(url, {
+    ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
-    ...options,
   });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(body || `Request failed: ${res.status}`);
   }
   const text = await res.text();
-  if (!text) return undefined as T;
+  if (!text) return [] as unknown as T;
   return JSON.parse(text);
 }
 
@@ -74,8 +77,6 @@ export const api = {
 
   canteenData: {
     get: (canteenId: string) =>
-      get<{ menu: unknown[]; orders: unknown[]; reviews: unknown[]; settings: unknown }>(
-        `/api/canteen?canteenId=${encodeURIComponent(canteenId)}`
-      ),
+      get<CanteenData>(`/api/canteen?canteenId=${encodeURIComponent(canteenId)}`),
   },
 };
